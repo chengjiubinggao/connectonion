@@ -233,8 +233,13 @@ class OpenAILLM(LLM):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key required. Set OPENAI_API_KEY environment variable or pass api_key parameter.")
-        
-        self.client = openai.OpenAI(api_key=self.api_key)
+
+        base_url = kwargs.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
+        client_kwargs = {"api_key": self.api_key}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+
+        self.client = openai.OpenAI(**client_kwargs)
         self.model = model
     
     def complete(self, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> LLMResponse:
@@ -1160,7 +1165,7 @@ def create_llm(model: str, api_key: Optional[str] = None, **kwargs) -> LLM:
     
     if not provider:
         # Try to infer provider from model name
-        if model.startswith("gpt") or model.startswith("o"):
+        if model.startswith("gpt") or model.startswith("o") or model.startswith("deepseek"):
             provider = "openai"
         elif model.startswith("claude"):
             provider = "anthropic"
